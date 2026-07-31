@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Livro de Contratos — Controle de Locações</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --paper:#F1EDE1;
+    --paper-raised:#FAF8F2;
+    --paper-line:#DCD3B8;
+    --ink:#1C2E27;
+    --ink-soft:#3E5148;
+    --ink-2:#16332B;
+    --brass:#B4872E;
+    --brass-soft:#DDBD7C;
+    --wax:#9C3B31;
+    --wax-soft:#F3DCD8;
+    --sage:#4C7A63;
+    --sage-soft:#DCEBE2;
+    --amber:#B4872E;
+    --amber-soft:#F3E7CD;
+    --shadow: 0 1px 2px rgba(28,46,39,.06), 0 6px 16px rgba(28,46,39,.05);
+    --radius: 3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  ::selection{ background:var(--brass-soft); }
+
+  h1,h2,h3{ font-family:'Fraunces',serif; font-weight:600; margin:0; color:var(--ink-2); }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+
+  a{color:inherit;}
+
+  /* ---------- top bar ---------- */
+  header.topbar{
+    position:sticky; top:0; z-index:40;
+    background:var(--paper-raised);
+    border-bottom:2px solid var(--ink-2);
+    padding:14px 28px;
+    display:flex; align-items:center; justify-content:space-between; gap:20px;
+    flex-wrap:wrap;
+  }
+  .brand{ display:flex; align-items:baseline; gap:10px; }
+  .brand .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--brass); font-weight:600;
+  }
+  .brand h1{ font-size:20px; letter-spacing:.01em; }
+  .topbar-meta{ font-size:11.5px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; }
+
+  .topbar-actions{ display:flex; align-items:center; gap:10px; }
+  .btn{
+    font-family:'Inter',sans-serif; font-weight:600; font-size:12.5px;
+    border:1.5px solid var(--ink-2); background:var(--ink-2); color:var(--paper-raised);
+    padding:9px 16px; border-radius:var(--radius); cursor:pointer;
+    letter-spacing:.02em; transition:transform .12s ease, background .12s ease;
+    display:inline-flex; align-items:center; gap:8px;
+  }
+  .btn:hover{ background:var(--ink); transform:translateY(-1px); }
+  .btn.ghost{ background:transparent; color:var(--ink-2); }
+  .btn.ghost:hover{ background:var(--paper-line); }
+  .btn.small{ padding:6px 11px; font-size:11.5px; }
+  input[type=file]{ display:none; }
+
+  /* ---------- empty state / dropzone ---------- */
+  .dropzone-wrap{
+    max-width:760px; margin:9vh auto; padding:0 20px;
+  }
+  .dropzone{
+    border:2px dashed var(--paper-line);
+    background:var(--paper-raised);
+    border-radius:6px;
+    padding:56px 32px;
+    text-align:center;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .dropzone.drag{ border-color:var(--brass); background:var(--amber-soft); }
+  .dropzone .stamp-icon{
+    width:64px;height:64px;margin:0 auto 18px;
+    border:2.5px solid var(--ink-2); border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--ink-2); transform:rotate(-6deg);
+  }
+  .dropzone h2{ font-size:23px; margin-bottom:8px; }
+  .dropzone p{ color:var(--ink-soft); font-size:14px; line-height:1.6; max-width:440px; margin:0 auto 22px; }
+  .dropzone .hint{ font-size:11.5px; color:var(--ink-soft); margin-top:16px; font-family:'IBM Plex Mono',monospace; }
+  #errorMsg{ color:var(--wax); font-size:13px; margin-top:14px; font-weight:600; display:none; }
+
+  /* ---------- ledger hero strip ---------- */
+  .ledger-strip{
+    background:var(--ink-2);
+    color:var(--paper-raised);
+    padding:26px 28px 22px;
+    display:none;
+  }
+  .ledger-strip .strip-label{
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--brass-soft); margin-bottom:16px; display:block;
+  }
+  .kpi-row{
+    display:grid; grid-template-columns:repeat(6,1fr); gap:0;
+  }
+  .kpi{ padding:0 20px; border-left:1px solid rgba(250,248,242,.16); }
+  .kpi:first-child{ border-left:none; padding-left:0; }
+  .kpi .kpi-value{ font-family:'Fraunces',serif; font-size:30px; font-weight:600; line-height:1; }
+  .kpi .kpi-value.wax{ color:#E8998C; }
+  .kpi .kpi-value.sage{ color:#9BCBB0; }
+  .kpi .kpi-label{ font-size:11.5px; color:#C9CFC9; margin-top:8px; line-height:1.4; }
+
+  /* ---------- main layout ---------- */
+  main{ max-width:1240px; margin:0 auto; padding:32px 28px 80px; display:none; }
+  .section{
+    background:var(--paper-raised);
+    border:1px solid var(--paper-line);
+    border-radius:6px;
+    margin-bottom:22px;
+    position:relative;
+    box-shadow:var(--shadow);
+  }
+  .section::before{
+    content:''; position:absolute; top:-1px; left:24px; right:24px; height:1px;
+    background:repeating-linear-gradient(90deg, var(--paper-line) 0 6px, transparent 6px 12px);
+  }
+  .section-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 24px 14px; border-bottom:1px solid var(--paper-line);
+    flex-wrap:wrap; gap:10px;
+  }
+  .section-head h2{ font-size:17px; }
+  .section-head .section-sub{ font-size:12px; color:var(--ink-soft); margin-top:3px; font-family:'Inter'; }
+  .section-body{ padding:20px 24px 24px; }
+
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  @media(max-width:820px){ .grid-2,.grid-3{ grid-template-columns:1fr; } .kpi-row{grid-template-columns:repeat(3,1fr);} }
+  @media(max-width:520px){ .kpi-row{grid-template-columns:repeat(2,1fr);} }
+
+  /* ---------- bars / breakdown lists ---------- */
+  .bar-list .bar-item{ margin-bottom:14px; }
+  .bar-item .bar-top{ display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px; }
+  .bar-item .bar-top .name{ font-weight:600; color:var(--ink-2); }
+  .bar-item .bar-top .num{ font-family:'IBM Plex Mono',monospace; color:var(--ink-soft); }
+  .bar-track{ height:8px; background:var(--paper-line); border-radius:2px; overflow:hidden; }
+  .bar-fill{ height:100%; background:var(--sage); border-radius:2px; }
+  .bar-fill.wax{ background:var(--wax); }
+  .bar-fill.brass{ background:var(--brass); }
+
+  /* ---------- stamps ---------- */
+  .stamp{
+    display:inline-flex; align-items:center; gap:5px;
+    font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:600;
+    letter-spacing:.05em; text-transform:uppercase;
+    padding:4px 9px; border-radius:3px; border:1.5px solid currentColor;
+    transform:rotate(-2deg);
+    white-space:nowrap;
+  }
+  .stamp.wax{ color:var(--wax); background:var(--wax-soft); }
+  .stamp.amber{ color:#8A661F; background:var(--amber-soft); }
+  .stamp.sage{ color:var(--sage); background:var(--sage-soft); }
+  .stamp.ink{ color:var(--ink-soft); background:var(--paper-line); }
+
+  /* ---------- tables ---------- */
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th{
+    text-align:left; font-family:'IBM Plex Mono',monospace; font-size:10.5px;
+    text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft);
+    padding:9px 10px; border-bottom:1.5px solid var(--ink-2); cursor:pointer; white-space:nowrap;
+    user-select:none;
+  }
+  th:hover{ color:var(--ink-2); }
+  th .arrow{ opacity:.5; margin-left:3px; }
+  td{ padding:10px 10px; border-bottom:1px solid var(--paper-line); vertical-align:middle; }
+  tbody tr:hover{ background:var(--amber-soft); cursor:pointer; }
+  tbody tr.detail-row{ background:var(--paper); cursor:default; }
+  tbody tr.detail-row:hover{ background:var(--paper); }
+  tbody tr.detail-row td{ padding:14px 18px; }
+  .detail-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; font-size:12.5px; }
+  .detail-grid div span{ display:block; color:var(--ink-soft); font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px; font-family:'IBM Plex Mono',monospace;}
+  .num-cell{ font-family:'IBM Plex Mono',monospace; }
+
+  .table-wrap{ overflow-x:auto; }
+  .table-toolbar{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; align-items:center; }
+  .table-toolbar input[type=text], .table-toolbar select{
+    font-family:'Inter'; font-size:12.5px; padding:8px 11px; border:1px solid var(--paper-line);
+    border-radius:3px; background:var(--paper); color:var(--ink); min-width:150px;
+  }
+  .table-toolbar input[type=text]{ min-width:220px; }
+  .count-pill{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); margin-left:auto; }
+
+  /* ---------- checklist ---------- */
+  .checklist{ list-style:none; margin:0; padding:0; }
+  .checklist li{
+    display:flex; align-items:flex-start; gap:12px; padding:11px 0; border-bottom:1px solid var(--paper-line);
+    font-size:13.5px;
+  }
+  .checklist li:last-child{ border-bottom:none; }
+  .dot{ width:9px;height:9px;border-radius:50%; margin-top:5px; flex-shrink:0; }
+  .dot.pending{ background:var(--wax); }
+  .dot.done{ background:var(--sage); }
+  .checklist .task{ flex:1; }
+  .checklist .status{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; text-transform:uppercase; color:var(--ink-soft); }
+
+  /* ---------- history mini chart ---------- */
+  .history-row{ display:flex; align-items:flex-end; gap:14px; height:120px; padding-top:10px; }
+  .history-col{ flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; height:100%; justify-content:flex-end;}
+  .history-bars{ display:flex; gap:3px; align-items:flex-end; height:80px; }
+  .hbar{ width:11px; border-radius:2px 2px 0 0; }
+  .hbar.expected{ background:var(--paper-line); }
+  .hbar.received{ background:var(--sage); }
+  .history-col.shortfall .hbar.received{ background:var(--wax); }
+  .history-label{ font-size:10px; font-family:'IBM Plex Mono',monospace; color:var(--ink-soft); }
+
+  footer{ text-align:center; padding:30px; font-size:11px; color:var(--ink-soft); font-family:'IBM Plex Mono',monospace; }
+
+  .legend{ display:flex; gap:16px; font-size:11px; color:var(--ink-soft); align-items:center; font-family:'IBM Plex Mono',monospace; }
+  .legend span{ display:inline-flex; align-items:center; gap:5px; }
+  .legend i{ width:9px; height:9px; border-radius:2px; display:inline-block; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="eyebrow">Rodriserv · Livro Nº 01</span>
+    <h1>Controle de Locações</h1>
+  </div>
+  <div class="topbar-actions">
+    <span class="topbar-meta" id="lastUpdated"></span>
+    <button class="btn ghost small" id="clearBtn" style="display:none;">Limpar dados</button>
+    <label class="btn" for="fileInput">⇪ Importar planilha</label>
+    <input type="file" id="fileInput" accept=".xlsx,.xls">
+  </div>
+</header>
+
+<div class="dropzone-wrap" id="dropzoneWrap">
+  <div class="dropzone" id="dropzone">
+    <div class="stamp-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+    </div>
+    <h2>Envie a planilha de cadastro</h2>
+    <p>Arraste o arquivo .xlsx aqui, ou clique para selecionar. O painel identifica sozinho as abas de cadastro, pagamentos e checklist e monta todos os apontamentos automaticamente — sempre que você atualizar o Excel, é só importar de novo.</p>
+    <label class="btn" for="fileInput">⇪ Selecionar arquivo</label>
+    <div class="hint">Nada é enviado para nenhum servidor — a leitura acontece localmente, no seu navegador.</div>
+    <div id="errorMsg"></div>
+  </div>
+</div>
+
+<div class="ledger-strip" id="ledgerStrip">
+  <span class="strip-label">Fechamento — total geral</span>
+  <div class="kpi-row" id="kpiRow"></div>
+</div>
+
+<main id="mainContent">
+
+  <div class="grid-2">
+    <section class="section">
+      <div class="section-head">
+        <div><h2>Vencimento de contratos</h2><div class="section-sub">Situação frente à data de hoje</div></div>
+      </div>
+      <div class="section-body bar-list" id="vencimentoBox"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div><h2>Garantias</h2><div class="section-sub">Caução, seguro fiança ou sem garantia</div></div>
+      </div>
+      <div class="section-body bar-list" id="garantiaBox"></div>
+    </section>
+  </div>
+
+  <div class="grid-2">
+    <section class="section">
+      <div class="section-head">
+        <div><h2>Concessionárias pendentes</h2><div class="section-sub">Número de contrato ainda não cadastrado</div></div>
+      </div>
+      <div class="section-body bar-list" id="concessionariaBox"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div><h2>Por intermediação</h2><div class="section-sub">Contratos e faturamento por administradora</div></div>
+      </div>
+      <div class="section-body bar-list" id="intermediacaoBox"></div>
+    </section>
+  </div>
+
+  <section class="section">
+    <div class="section-head">
+      <div><h2>Por residência</h2><div class="section-sub">Unidades, vencimentos e faturamento agrupados por imóvel</div></div>
+    </div>
+    <div class="section-body table-wrap">
+      <table id="residenciaTable"><thead></thead><tbody></tbody></table>
+    </div>
+  </section>
+
+  <div class="grid-2">
+    <section class="section">
+      <div class="section-head">
+        <div><h2>Financeiro — últimos meses</h2><div class="section-sub">Esperado vs. recebido (aba Pagto)</div></div>
+      </div>
+      <div class="section-body">
+        <div class="legend" style="margin-bottom:6px;">
+          <span><i style="background:var(--paper-line)"></i>Esperado</span>
+          <span><i style="background:var(--sage)"></i>Recebido em dia</span>
+          <span><i style="background:var(--wax)"></i>Recebido com déficit</span>
+        </div>
+        <div class="history-row" id="historyBox"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div><h2>Ações urgentes</h2><div class="section-sub">Checklist extraído do cadastro</div></div>
+      </div>
+      <div class="section-body">
+        <ul class="checklist" id="checklistBox"></ul>
+      </div>
+    </section>
+  </div>
+
+  <section class="section">
+    <div class="section-head">
+      <div><h2>Contratos — detalhamento completo</h2><div class="section-sub">Clique numa linha para ver CPF, contato, observações e nota</div></div>
+    </div>
+    <div class="section-body">
+      <div class="table-toolbar">
+        <input type="text" id="searchInput" placeholder="Buscar por unidade, inquilino, residência...">
+        <select id="filterStatus">
+          <option value="">Todos os status</option>
+          <option value="vencido">Vencidos</option>
+          <option value="60">Vencendo em até 60 dias</option>
+          <option value="180">Vencendo em 61–180 dias</option>
+          <option value="vigente">Vigentes</option>
+          <option value="inativo">Inativos / vendidos</option>
+        </select>
+        <select id="filterIntermediacao"></select>
+        <span class="count-pill" id="countPill"></span>
+      </div>
+      <div class="table-wrap">
+        <table id="contractsTable">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer id="pageFooter" style="display:none;">Painel gerado localmente a partir do arquivo importado · atualize reimportando a planilha</footer>
+
+<script>
+/* =========================================================
+   HELPERS
+========================================================= */
+function normalize(s){
+  return (s===null||s===undefined) ? '' : s.toString().trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
+}
+function parseNumber(v){
+  if(v===null||v===undefined) return 0;
+  if(typeof v === 'number') return v;
+  const s = v.toString().trim();
+  if(s===''||s==='-') return 0;
+  const cleaned = s.replace(/\./g,'').replace(',', '.');
+  const n = parseFloat(cleaned);
+  if(!isNaN(n)) return n;
+  const n2 = parseFloat(s);
+  return isNaN(n2) ? 0 : n2;
+}
+function isBlankish(v){
+  if(v===null||v===undefined) return true;
+  const s = v.toString().trim();
+  return s===''||s==='-'||s==='?';
+}
+function fmtMoney(n){
+  return 'R$ ' + (n||0).toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function fmtDate(d){
+  if(!(d instanceof Date) || isNaN(d)) return '—';
+  return d.toLocaleDateString('pt-BR');
+}
+function todayMidnight(){
+  const t = new Date();
+  return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+}
+function excelSerialToDate(n){
+  // fallback if cellDates option misses a numeric date
+  const utc = Math.round((n - 25569) * 86400 * 1000);
+  return new Date(utc);
+}
+function coerceDate(v){
+  if(v instanceof Date && !isNaN(v)) return v;
+  if(typeof v === 'number') return excelSerialToDate(v);
+  return null;
+}
+
+/* =========================================================
+   SHEET PARSING
+========================================================= */
+function findHeaderRow(rows, mustHave){
+  for(let i=0;i<Math.min(rows.length,10);i++){
+    const norm = rows[i].map(normalize);
+    if(mustHave.every(k => norm.includes(k))) return i;
+  }
+  return -1;
+}
+
+function buildColumnMap(headerRow, dict){
+  const map = {};
+  headerRow.forEach((cell, idx) => {
+    const n = normalize(cell);
+    if(dict[n] && !(dict[n] in map)) map[dict[n]] = idx;
+  });
+  return map;
+}
+
+const CADASTRO_DICT = {
+  'residencia':'residencia', 'unidade':'unidade', 'inquilino':'inquilino', 'cpf':'cpf',
+  'contato':'contato', 'vencto aluguel':'venctoAluguel', 'inicio contrato':'inicioContrato',
+  'fim contrato':'fimContrato', '1o contrato':'primeiroContrato', 'valor atual':'valorAtual',
+  'caucao':'caucaoAtual', 'pagto caucao':'caucaoPago', 'caucao atual':'caucaoAtual',
+  'contrato':'contratoFlag', 'intermediacao':'intermediacao',
+  'status':'status', 'sabesp':'sabesp', 'eletropaulo':'eletropaulo', 'obs':'obs', 'nota':'nota'
+};
+
+function parseCadastro(ws){
+  const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null, raw:true});
+  const hIdx = findHeaderRow(rows, ['residencia','unidade','contrato']);
+  if(hIdx === -1) throw new Error('Não encontrei o cabeçalho esperado na aba de cadastro (colunas Residência / Unidade / Contrato).');
+  const cmap = buildColumnMap(rows[hIdx], CADASTRO_DICT);
+  const required = ['residencia','unidade','fimContrato','contratoFlag','intermediacao','valorAtual','caucaoAtual','sabesp','eletropaulo'];
+  required.forEach(k=>{ if(!(k in cmap)) throw new Error('Coluna obrigatória não encontrada no cadastro: '+k); });
+
+  const today = todayMidnight();
+  let currentResidencia = '';
+  const contratos = [];
+  const checklist = [];
+
+  for(let i=hIdx+1;i<rows.length;i++){
+    const r = rows[i];
+    if(!r) continue;
+    const unidadeRaw = r[cmap.unidade];
+    const unidadeNorm = normalize(unidadeRaw);
+    if(unidadeNorm === '' ) continue;
+
+    // checklist rows are marked with 'VERIFICAR' in the unidade position
+    if(unidadeNorm === 'verificar'){
+      checklist.push({
+        tarefa: (r[cmap.residencia]||'').toString().trim(),
+        status: (r[cmap.inquilino]||'').toString().trim() || (r[cmap.cpf]||'').toString().trim()
+      });
+      continue;
+    }
+
+    const residenciaCell = (r[cmap.residencia]||'').toString().trim();
+    if(residenciaCell) currentResidencia = residenciaCell;
+
+    const contratoFlagRaw = r[cmap.contratoFlag];
+    const ativo = !isBlankish(contratoFlagRaw);
+
+    const fimDate = coerceDate(r[cmap.fimContrato]);
+    let diasParaVencer = null, statusVencimento = 'inativo';
+    if(ativo && fimDate){
+      diasParaVencer = Math.round((fimDate - today)/86400000);
+      if(diasParaVencer < 0) statusVencimento = 'vencido';
+      else if(diasParaVencer <= 60) statusVencimento = '60';
+      else if(diasParaVencer <= 180) statusVencimento = '180';
+      else statusVencimento = 'vigente';
+    }
+
+    const caucaoRaw = r[cmap.caucaoAtual];
+    const caucaoPagoRaw = (cmap.caucaoPago!==undefined) ? r[cmap.caucaoPago] : undefined;
+    let garantiaTipo = 'sem';
+    let caucaoValor = 0;
+    let caucaoOriginal = (typeof caucaoPagoRaw === 'number') ? caucaoPagoRaw : null;
+    if(typeof caucaoRaw === 'number'){
+      caucaoValor = caucaoRaw;
+      if(caucaoRaw === 0){ garantiaTipo = 'esgotada'; }
+      else if(caucaoOriginal !== null && caucaoRaw < caucaoOriginal){ garantiaTipo = 'reduzida'; }
+      else { garantiaTipo = 'caucao'; }
+    } else if(typeof caucaoRaw === 'string' && normalize(caucaoRaw).startsWith('segur')){
+      garantiaTipo = 'seguro';
+    } else if(typeof caucaoPagoRaw === 'string' && normalize(caucaoPagoRaw).startsWith('segur')){
+      garantiaTipo = 'seguro';
+    }
+
+    contratos.push({
+      residencia: currentResidencia,
+      unidade: (unidadeRaw||'').toString().trim(),
+      inquilino: (r[cmap.inquilino]||'').toString().trim(),
+      cpf: (r[cmap.cpf]||'').toString().trim(),
+      contato: (r[cmap.contato]||'').toString().trim(),
+      inicioContrato: coerceDate(r[cmap.inicioContrato]),
+      fimContrato: fimDate,
+      valorAtual: parseNumber(r[cmap.valorAtual]),
+      caucaoValor, caucaoOriginal, garantiaTipo, caucaoRaw,
+      intermediacao: (r[cmap.intermediacao]||'').toString().trim() || '—',
+      sabesp: r[cmap.sabesp], eletropaulo: r[cmap.eletropaulo],
+      sabespPendente: ativo && isBlankish(r[cmap.sabesp]),
+      eletropauloPendente: ativo && isBlankish(r[cmap.eletropaulo]),
+      obs: (r[cmap.obs]||'').toString().trim(),
+      nota: (r[cmap.nota]||'').toString().trim(),
+      ativo, diasParaVencer, statusVencimento
+    });
+  }
+  return {contratos, checklist};
+}
+
+const PAGTO_DICT = {'residencia':'residencia','unidade':'unidade','inquilino':'inquilino','conta':'conta','aluguel':'aluguel','vencimento':'vencimento'};
+
+function parsePagto(ws){
+  const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null, raw:true});
+  const hIdx = findHeaderRow(rows, ['conta','aluguel']);
+  if(hIdx === -1) return null;
+  const header = rows[hIdx];
+  const cmap = buildColumnMap(header, PAGTO_DICT);
+  if(!('conta' in cmap) || !('aluguel' in cmap)) return null;
+
+  const monthCols = [];
+  header.forEach((cell, idx) => {
+    const d = coerceDate(cell);
+    if(d) monthCols.push({idx, date:d});
+  });
+  monthCols.sort((a,b)=>a.date-b.date);
+
+  let expectedTotal = 0;
+  const monthTotals = monthCols.map(()=>0);
+  const monthHasData = monthCols.map(()=>false);
+
+  for(let i=hIdx+1;i<rows.length;i++){
+    const r = rows[i];
+    if(!r) continue;
+    const conta = r[cmap.conta];
+    if(isBlankish(conta)) continue;
+    expectedTotal += parseNumber(r[cmap.aluguel]);
+    monthCols.forEach((m, mi) => {
+      monthTotals[mi] += parseNumber(r[m.idx]);
+      if(!isBlankish(r[m.idx])) monthHasData[mi] = true;
+    });
+  }
+
+  const history = monthCols
+    .map((m, mi) => ({ date: m.date, recebido: monthTotals[mi], esperado: expectedTotal,
+      deficit: expectedTotal - monthTotals[mi], hasData: monthHasData[mi] }))
+    .filter(h => h.hasData);
+
+  const atual = history.length ? history[history.length-1] : null;
+  return { expectedTotal, history, atual };
+}
+
+function parseChecklistSheet(ws){
+  const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null, raw:true});
+  const checklist = [];
+  rows.forEach(r=>{
+    if(!r) return;
+    for(let i=0;i<r.length;i++){
+      if(normalize(r[i]) === 'verificar'){
+        checklist.push({
+          tarefa: (r[i-1]||'').toString().trim(),
+          status: (r[i+1]||'').toString().trim()
+        });
+        break;
+      }
+    }
+  });
+  return checklist;
+}
+
+/* =========================================================
+   RENDER
+========================================================= */
+let STATE = null;
+
+function computeAndRender(cadastroData, pagtoData, fileName){
+  const contratos = cadastroData.contratos;
+  const ativos = contratos.filter(c=>c.ativo);
+
+  STATE = { contratos, checklist: cadastroData.checklist, pagto: pagtoData, fileName, importedAt: new Date() };
+
+  document.getElementById('dropzoneWrap').style.display = 'none';
+  document.getElementById('ledgerStrip').style.display = 'block';
+  document.getElementById('mainContent').style.display = 'block';
+  document.getElementById('pageFooter').style.display = 'block';
+  document.getElementById('clearBtn').style.display = 'inline-flex';
+  updateMeta();
+
+  renderKPIs(contratos, ativos, pagtoData);
+  renderVencimento(ativos);
+  renderGarantia(ativos);
+  renderConcessionarias(ativos);
+  renderIntermediacao(ativos);
+  renderResidencia(contratos);
+  renderHistory(pagtoData);
+  renderChecklist(cadastroData.checklist);
+  renderContractsTable(contratos);
+
+  try{
+    localStorage.setItem('contratos_dashboard_v1', JSON.stringify({
+      fileName, importedAt: STATE.importedAt.toISOString(),
+      contratos: contratos.map(c=>({...c, inicioContrato: c.inicioContrato?c.inicioContrato.toISOString():null, fimContrato: c.fimContrato?c.fimContrato.toISOString():null})),
+      checklist: cadastroData.checklist,
+      pagto: pagtoData ? {...pagtoData, history: pagtoData.history.map(h=>({...h, date:h.date.toISOString()}))} : null
+    }));
+  }catch(e){ console.warn('Não foi possível salvar cache local:', e); }
+}
+
+function updateMeta(){
+  document.getElementById('lastUpdated').textContent =
+    STATE.fileName ? `${STATE.fileName} · importado em ${STATE.importedAt.toLocaleString('pt-BR')}` : '';
+}
+
+function kpiHTML(value, label, cls){
+  return `<div class="kpi"><div class="kpi-value ${cls||''}">${value}</div><div class="kpi-label">${label}</div></div>`;
+}
+
+function renderKPIs(contratos, ativos, pagto){
+  const vencidos = ativos.filter(c=>c.statusVencimento==='vencido').length;
+  const faturamento = ativos.reduce((s,c)=>s+c.valorAtual,0);
+  const inadimplencia = pagto && pagto.atual ? Math.max(pagto.atual.deficit,0) : null;
+  const caucaoTotal = ativos.reduce((s,c)=>s+c.caucaoValor,0);
+
+  const kpis = [
+    kpiHTML(contratos.length, 'Unidades cadastradas'),
+    kpiHTML(ativos.length, 'Locações ativas', 'sage'),
+    kpiHTML(vencidos, 'Contratos vencidos', vencidos>0?'wax':''),
+    kpiHTML(fmtMoney(faturamento), 'Faturamento mensal'),
+    kpiHTML(inadimplencia===null?'—':fmtMoney(inadimplencia), 'Inadimplência (mês)', inadimplencia>0?'wax':'sage'),
+    kpiHTML(fmtMoney(caucaoTotal), 'Caução total imobilizada'),
+  ];
+  document.getElementById('kpiRow').innerHTML = kpis.join('');
+}
+
+function barItem(name, count, total, cls){
+  const pct = total>0 ? Math.round((count/total)*100) : 0;
+  return `<div class="bar-item">
+    <div class="bar-top"><span class="name">${name}</span><span class="num">${count} · ${pct}%</span></div>
+    <div class="bar-track"><div class="bar-fill ${cls||''}" style="width:${pct}%"></div></div>
+  </div>`;
+}
+
+function renderVencimento(ativos){
+  const total = ativos.length;
+  const vencidos = ativos.filter(c=>c.statusVencimento==='vencido').length;
+  const d60 = ativos.filter(c=>c.statusVencimento==='60').length;
+  const d180 = ativos.filter(c=>c.statusVencimento==='180').length;
+  const vig = ativos.filter(c=>c.statusVencimento==='vigente').length;
+  document.getElementById('vencimentoBox').innerHTML =
+    barItem('Vencidos — renovação urgente', vencidos, total, 'wax') +
+    barItem('Vencendo em até 60 dias', d60, total, 'brass') +
+    barItem('Vencendo entre 61 e 180 dias', d180, total) +
+    barItem('Vigentes (mais de 180 dias)', vig, total, 'sage');
+}
+
+function renderGarantia(ativos){
+  const total = ativos.length;
+  const intacta = ativos.filter(c=>c.garantiaTipo==='caucao').length;
+  const reduzida = ativos.filter(c=>c.garantiaTipo==='reduzida').length;
+  const esgotada = ativos.filter(c=>c.garantiaTipo==='esgotada').length;
+  const seguro = ativos.filter(c=>c.garantiaTipo==='seguro').length;
+  const sem = ativos.filter(c=>c.garantiaTipo==='sem').length;
+  const totalPago = ativos.reduce((s,c)=>s + (c.caucaoOriginal||0), 0);
+  const totalAtual = ativos.reduce((s,c)=>s + (c.garantiaTipo==='esgotada'||c.garantiaTipo==='reduzida'||c.garantiaTipo==='caucao' ? c.caucaoValor : 0), 0);
+  const consumido = totalPago - totalAtual;
+  let html = barItem('Caução intacta (saldo = depositado)', intacta, total, 'sage');
+  if(reduzida>0) html += barItem('Caução parcialmente utilizada', reduzida, total, 'brass');
+  if(esgotada>0) html += barItem('Caução esgotada (saldo zerado)', esgotada, total, 'wax');
+  html += barItem('Com seguro fiança', seguro, total, 'brass');
+  html += barItem('Sem garantia registrada', sem, total, 'wax');
+  if(consumido > 0){
+    html += `<div style="margin-top:16px; padding-top:14px; border-top:1px dashed var(--paper-line); font-size:12.5px; color:var(--ink-soft);">
+      Depositado: <b class="mono">${fmtMoney(totalPago)}</b> · Saldo hoje: <b class="mono">${fmtMoney(totalAtual)}</b> ·
+      <span style="color:var(--wax); font-weight:600;">Consumido: ${fmtMoney(consumido)}</span></div>`;
+  }
+  document.getElementById('garantiaBox').innerHTML = html;
+}
+
+function renderConcessionarias(ativos){
+  const total = ativos.length;
+  const sabesp = ativos.filter(c=>c.sabespPendente).length;
+  const eletro = ativos.filter(c=>c.eletropauloPendente).length;
+  document.getElementById('concessionariaBox').innerHTML =
+    barItem('Sabesp — número pendente', sabesp, total, 'wax') +
+    barItem('Eletropaulo — número pendente', eletro, total, 'wax');
+}
+
+function renderIntermediacao(ativos){
+  const total = ativos.length;
+  const groups = {};
+  ativos.forEach(c=>{ groups[c.intermediacao] = (groups[c.intermediacao]||{count:0,valor:0}); groups[c.intermediacao].count++; groups[c.intermediacao].valor += c.valorAtual; });
+  const entries = Object.entries(groups).sort((a,b)=>b[1].count-a[1].count);
+  document.getElementById('intermediacaoBox').innerHTML = entries.map(([name,d])=>
+    barItem(`${name} — ${fmtMoney(d.valor)}`, d.count, total, 'sage')
+  ).join('');
+}
+
+function renderResidencia(contratos){
+  const groups = {};
+  contratos.forEach(c=>{
+    const key = c.residencia || '—';
+    if(!groups[key]) groups[key] = {ativas:0, vencidos:0, faturamento:0, sabesp:0, eletro:0};
+    if(c.ativo){
+      groups[key].ativas++;
+      groups[key].faturamento += c.valorAtual;
+      if(c.statusVencimento==='vencido') groups[key].vencidos++;
+      if(c.sabespPendente) groups[key].sabesp++;
+      if(c.eletropauloPendente) groups[key].eletro++;
+    }
+  });
+  const thead = `<tr><th>Residência</th><th>Unidades ativas</th><th>Vencidos</th><th>Faturamento</th><th>Sabesp pend.</th><th>Eletropaulo pend.</th></tr>`;
+  const tbody = Object.entries(groups).map(([name,d])=>
+    `<tr><td>${name}</td><td class="num-cell">${d.ativas}</td>
+     <td class="num-cell">${d.vencidos>0?`<span class="stamp wax">${d.vencidos}</span>`:'0'}</td>
+     <td class="num-cell">${fmtMoney(d.faturamento)}</td>
+     <td class="num-cell">${d.sabesp}</td><td class="num-cell">${d.eletro}</td></tr>`
+  ).join('');
+  document.getElementById('residenciaTable').querySelector('thead').innerHTML = thead;
+  document.getElementById('residenciaTable').querySelector('tbody').innerHTML = tbody;
+}
+
+function renderHistory(pagto){
+  const box = document.getElementById('historyBox');
+  if(!pagto || !pagto.history.length){ box.innerHTML = '<p style="color:var(--ink-soft);font-size:13px;">Aba "Pagto" não encontrada ou sem colunas de mês identificadas.</p>'; return; }
+  const recent = pagto.history.slice(-6);
+  const maxVal = Math.max(...recent.map(h=>Math.max(h.esperado,h.recebido)), 1);
+  box.innerHTML = recent.map(h=>{
+    const eH = Math.round((h.esperado/maxVal)*80);
+    const rH = Math.round((h.recebido/maxVal)*80);
+    const short = h.deficit > 1;
+    return `<div class="history-col ${short?'shortfall':''}">
+      <div class="history-bars">
+        <div class="hbar expected" style="height:${eH}px" title="Esperado: ${fmtMoney(h.esperado)}"></div>
+        <div class="hbar received" style="height:${rH}px" title="Recebido: ${fmtMoney(h.recebido)}"></div>
+      </div>
+      <div class="history-label">${h.date.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderChecklist(checklist){
+  const box = document.getElementById('checklistBox');
+  if(!checklist.length){ box.innerHTML = '<li style="color:var(--ink-soft);">Nenhum item de checklist encontrado no cadastro.</li>'; return; }
+  box.innerHTML = checklist.map(item=>{
+    const statusNorm = normalize(item.status);
+    const done = statusNorm==='ok' || statusNorm==='pagou';
+    return `<li><span class="dot ${done?'done':'pending'}"></span>
+      <span class="task">${item.tarefa}</span>
+      <span class="status">${item.status||'—'}</span></li>`;
+  }).join('');
+}
+
+const STATUS_LABELS = {
+  vencido: {t:'Vencido', c:'wax'}, '60': {t:'≤ 60 dias', c:'amber'},
+  '180': {t:'61–180 dias', c:'ink'}, vigente: {t:'Vigente', c:'sage'}, inativo: {t:'Inativo', c:'ink'}
+};
+
+function renderContractsTable(contratos){
+  const select = document.getElementById('filterIntermediacao');
+  const inter = Array.from(new Set(contratos.map(c=>c.intermediacao))).sort();
+  select.innerHTML = '<option value="">Todas intermediações</option>' + inter.map(i=>`<option value="${i}">${i}</option>`).join('');
+
+  let sortKey = 'residencia', sortDir = 1;
+
+  function draw(){
+    const q = normalize(document.getElementById('searchInput').value);
+    const statusF = document.getElementById('filterStatus').value;
+    const interF = document.getElementById('filterIntermediacao').value;
+
+    let rows = contratos.filter(c=>{
+      if(statusF && c.statusVencimento !== statusF) return false;
+      if(interF && c.intermediacao !== interF) return false;
+      if(q){
+        const hay = normalize([c.residencia,c.unidade,c.inquilino,c.intermediacao].join(' '));
+        if(!hay.includes(q)) return false;
+      }
+      return true;
+    });
+
+    rows.sort((a,b)=>{
+      let va = a[sortKey], vb = b[sortKey];
+      if(va instanceof Date) va = va ? va.getTime() : -Infinity;
+      if(vb instanceof Date) vb = vb ? vb.getTime() : -Infinity;
+      if(typeof va === 'string') va = va.toLowerCase();
+      if(typeof vb === 'string') vb = vb.toLowerCase();
+      if(va < vb) return -1*sortDir; if(va > vb) return 1*sortDir; return 0;
+    });
+
+    document.getElementById('countPill').textContent = `${rows.length} contrato(s)`;
+
+    const cols = [
+      ['residencia','Residência'], ['unidade','Unidade'], ['inquilino','Inquilino'],
+      ['intermediacao','Intermediação'], ['fimContrato','Fim contrato'], ['statusVencimento','Status'],
+      ['valorAtual','Valor atual'], ['garantiaTipo','Garantia'], ['sabespPendente','Sabesp'], ['eletropauloPendente','Eletrop.']
+    ];
+    document.getElementById('contractsTable').querySelector('thead').innerHTML =
+      '<tr>' + cols.map(([k,l])=>`<th data-key="${k}">${l}<span class="arrow">${sortKey===k?(sortDir===1?'▲':'▼'):''}</span></th>`).join('') + '</tr>';
+    document.getElementById('contractsTable').querySelectorAll('th').forEach(th=>{
+      th.onclick = ()=>{ const k=th.dataset.key; if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=1;} draw(); };
+    });
+
+    const tbody = document.getElementById('contractsTable').querySelector('tbody');
+    tbody.innerHTML = '';
+    rows.forEach((c,idx)=>{
+      const st = STATUS_LABELS[c.statusVencimento];
+      const garLabelMap = {
+        caucao: `Caução ${fmtMoney(c.caucaoValor)}`,
+        reduzida: `Caução ${fmtMoney(c.caucaoValor)} (reduzida de ${fmtMoney(c.caucaoOriginal)})`,
+        esgotada: `Caução esgotada (era ${fmtMoney(c.caucaoOriginal)})`,
+        seguro: 'Seguro fiança', sem: 'Sem garantia'
+      };
+      let garLabel = garLabelMap[c.garantiaTipo] || 'Sem garantia';
+      if(c.garantiaTipo==='esgotada') garLabel = `<span class="stamp wax">${garLabel}</span>`;
+      else if(c.garantiaTipo==='reduzida') garLabel = `<span class="stamp amber">${garLabel}</span>`;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${c.residencia}</td><td>${c.unidade}</td><td>${c.inquilino}</td>
+        <td>${c.intermediacao}</td><td class="num-cell">${fmtDate(c.fimContrato)}</td>
+        <td><span class="stamp ${st.c}">${st.t}</span></td>
+        <td class="num-cell">${fmtMoney(c.valorAtual)}</td>
+        <td>${garLabel}</td>
+        <td>${c.sabespPendente?'<span class="stamp wax">Pendente</span>':'OK'}</td>
+        <td>${c.eletropauloPendente?'<span class="stamp wax">Pendente</span>':'OK'}</td>`;
+      tr.onclick = ()=>toggleDetail(tr, c, cols.length);
+      tbody.appendChild(tr);
+    });
+  }
+
+  function toggleDetail(tr, c, colspan){
+    const next = tr.nextElementSibling;
+    if(next && next.classList.contains('detail-row')){ next.remove(); return; }
+    document.querySelectorAll('.detail-row').forEach(el=>el.remove());
+    const dr = document.createElement('tr');
+    dr.className = 'detail-row';
+    dr.innerHTML = `<td colspan="${colspan}"><div class="detail-grid">
+      <div><span>CPF</span>${c.cpf||'—'}</div>
+      <div><span>Contato</span>${c.contato||'—'}</div>
+      <div><span>Início do contrato</span>${fmtDate(c.inicioContrato)}</div>
+      <div><span>Dias até o vencimento</span>${c.diasParaVencer===null?'—':c.diasParaVencer}</div>
+      <div style="grid-column:span 2"><span>Observações</span>${c.obs||'—'}</div>
+      <div style="grid-column:span 2"><span>Nota</span>${c.nota||'—'}</div>
+    </div></td>`;
+    tr.after(dr);
+  }
+
+  document.getElementById('searchInput').oninput = draw;
+  document.getElementById('filterStatus').onchange = draw;
+  document.getElementById('filterIntermediacao').onchange = draw;
+  draw();
+}
+
+/* =========================================================
+   FILE HANDLING
+========================================================= */
+function handleFile(file){
+  const errBox = document.getElementById('errorMsg');
+  errBox.style.display = 'none';
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array', cellDates:true});
+      const cadName = wb.SheetNames.find(n=>normalize(n).includes('cadastro atual'))
+                    || wb.SheetNames.find(n=>normalize(n).includes('cadastro'))
+                    || wb.SheetNames[0];
+      const pagName = wb.SheetNames.find(n=>normalize(n).includes('pagto') || normalize(n).includes('pagamento'));
+      const chkName = wb.SheetNames.find(n=>normalize(n).includes('checklist'));
+      const cadastroData = parseCadastro(wb.Sheets[cadName]);
+      const pagtoData = pagName ? parsePagto(wb.Sheets[pagName]) : null;
+      if(chkName){ cadastroData.checklist = parseChecklistSheet(wb.Sheets[chkName]); }
+      computeAndRender(cadastroData, pagtoData, file.name);
+    }catch(err){
+      console.error(err);
+      errBox.textContent = 'Não consegui ler essa planilha: ' + err.message;
+      errBox.style.display = 'block';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+const fileInput = document.getElementById('fileInput');
+fileInput.addEventListener('change', (e)=>{ if(e.target.files[0]) handleFile(e.target.files[0]); });
+
+const dropzone = document.getElementById('dropzone');
+['dragenter','dragover'].forEach(evt=>dropzone.addEventListener(evt, e=>{ e.preventDefault(); dropzone.classList.add('drag'); }));
+['dragleave','drop'].forEach(evt=>dropzone.addEventListener(evt, e=>{ e.preventDefault(); dropzone.classList.remove('drag'); }));
+dropzone.addEventListener('drop', e=>{ const f = e.dataTransfer.files[0]; if(f) handleFile(f); });
+dropzone.addEventListener('click', (e)=>{ if(e.target.tagName!=='LABEL') fileInput.click(); });
+
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  localStorage.removeItem('contratos_dashboard_v1');
+  location.reload();
+});
+
+/* =========================================================
+   RESTORE FROM CACHE
+========================================================= */
+(function tryRestore(){
+  try{
+    const raw = localStorage.getItem('contratos_dashboard_v1');
+    if(!raw) return;
+    const cached = JSON.parse(raw);
+    const contratos = cached.contratos.map(c=>({...c, inicioContrato: c.inicioContrato?new Date(c.inicioContrato):null, fimContrato: c.fimContrato?new Date(c.fimContrato):null}));
+    const pagto = cached.pagto ? {...cached.pagto, history: cached.pagto.history.map(h=>({...h, date:new Date(h.date)}))} : null;
+    // recompute vencimento buckets against "today" at load time
+    const today = todayMidnight();
+    contratos.forEach(c=>{
+      if(c.ativo && c.fimContrato){
+        c.diasParaVencer = Math.round((c.fimContrato - today)/86400000);
+        c.statusVencimento = c.diasParaVencer<0?'vencido':(c.diasParaVencer<=60?'60':(c.diasParaVencer<=180?'180':'vigente'));
+      }
+    });
+    computeAndRender({contratos, checklist: cached.checklist}, pagto, cached.fileName);
+    STATE.importedAt = new Date(cached.importedAt);
+    updateMeta();
+  }catch(e){ console.warn('Cache local inválido, ignorando.', e); }
+})();
+</script>
+</body>
+</html>
