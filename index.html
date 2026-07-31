@@ -227,6 +227,22 @@
   .legend{ display:flex; gap:16px; font-size:11px; color:var(--ink-soft); align-items:center; font-family:'IBM Plex Mono',monospace; }
   .legend span{ display:inline-flex; align-items:center; gap:5px; }
   .legend i{ width:9px; height:9px; border-radius:2px; display:inline-block; }
+
+  /* ---------- thematic group dividers ("por evento") ---------- */
+  .mega-header{
+    display:flex; align-items:baseline; gap:14px;
+    margin:36px 0 16px; padding-bottom:10px;
+    border-bottom:2.5px solid var(--ink-2);
+  }
+  .mega-header:first-child{ margin-top:0; }
+  .mega-header .mega-num{
+    font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600;
+    color:var(--brass); letter-spacing:.05em;
+    border:1.5px solid var(--brass); border-radius:50%;
+    width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .mega-header h3{ font-size:19px; letter-spacing:.01em; }
 </style>
 </head>
 <body>
@@ -264,46 +280,7 @@
 
 <main id="mainContent">
 
-  <div class="grid-2">
-    <section class="section">
-      <div class="section-head">
-        <div><h2>Vencimento de contratos</h2><div class="section-sub">Situação frente à data de hoje</div></div>
-      </div>
-      <div class="section-body bar-list" id="vencimentoBox"></div>
-    </section>
-
-    <section class="section">
-      <div class="section-head">
-        <div><h2>Garantias</h2><div class="section-sub">Caução, seguro fiança ou sem garantia</div></div>
-      </div>
-      <div class="section-body bar-list" id="garantiaBox"></div>
-    </section>
-  </div>
-
-  <div class="grid-2">
-    <section class="section">
-      <div class="section-head">
-        <div><h2>Concessionárias pendentes</h2><div class="section-sub">Número de contrato ainda não cadastrado</div></div>
-      </div>
-      <div class="section-body bar-list" id="concessionariaBox"></div>
-    </section>
-
-    <section class="section">
-      <div class="section-head">
-        <div><h2>Por intermediação</h2><div class="section-sub">Contratos e faturamento por administradora</div></div>
-      </div>
-      <div class="section-body bar-list" id="intermediacaoBox"></div>
-    </section>
-  </div>
-
-  <section class="section">
-    <div class="section-head">
-      <div><h2>Por residência</h2><div class="section-sub">Unidades, vencimentos e faturamento agrupados por imóvel</div></div>
-    </div>
-    <div class="section-body table-wrap">
-      <table id="residenciaTable"><thead></thead><tbody></tbody></table>
-    </div>
-  </section>
+  <div class="mega-header"><span class="mega-num">01</span><h3>Receitas, inadimplência e caução</h3></div>
 
   <div class="grid-2">
     <section class="section">
@@ -322,13 +299,38 @@
 
     <section class="section">
       <div class="section-head">
-        <div><h2>Ações urgentes</h2><div class="section-sub">Checklist extraído do cadastro</div></div>
+        <div><h2>Garantias — caução</h2><div class="section-sub">Caução, seguro fiança ou sem garantia</div></div>
       </div>
-      <div class="section-body">
-        <ul class="checklist" id="checklistBox"></ul>
-      </div>
+      <div class="section-body bar-list" id="garantiaBox"></div>
     </section>
   </div>
+
+  <div class="mega-header"><span class="mega-num">02</span><h3>Cadastros</h3></div>
+
+  <div class="grid-2">
+    <section class="section">
+      <div class="section-head">
+        <div><h2>Vencimento de contratos</h2><div class="section-sub">Situação frente à data de hoje</div></div>
+      </div>
+      <div class="section-body bar-list" id="vencimentoBox"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div><h2>Por intermediação</h2><div class="section-sub">Contratos e faturamento por administradora</div></div>
+      </div>
+      <div class="section-body bar-list" id="intermediacaoBox"></div>
+    </section>
+  </div>
+
+  <section class="section">
+    <div class="section-head">
+      <div><h2>Por residência</h2><div class="section-sub">Unidades, vencimentos e faturamento agrupados por imóvel</div></div>
+    </div>
+    <div class="section-body table-wrap">
+      <table id="residenciaTable"><thead></thead><tbody></tbody></table>
+    </div>
+  </section>
 
   <section class="section">
     <div class="section-head">
@@ -356,6 +358,26 @@
       </div>
     </div>
   </section>
+
+  <div class="mega-header"><span class="mega-num">03</span><h3>Pendências de cadastro</h3></div>
+
+  <div class="grid-2">
+    <section class="section">
+      <div class="section-head">
+        <div><h2>Concessionárias pendentes</h2><div class="section-sub">Número de contrato ainda não cadastrado</div></div>
+      </div>
+      <div class="section-body bar-list" id="concessionariaBox"></div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div><h2>Ações urgentes</h2><div class="section-sub">Checklist extraído do cadastro</div></div>
+      </div>
+      <div class="section-body">
+        <ul class="checklist" id="checklistBox"></ul>
+      </div>
+    </section>
+  </div>
 
 </main>
 
